@@ -7,62 +7,61 @@ class Graph_Node:
         self.i = i
         self.j = j
         self.c = c
-        self.p = None
 
     def __hash__(self):
         return hash(self.i) * 13 + hash(self.j) * 17 + hash(self.c) * 19
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
-        return f"({self.i}, {self.j}, {self.c})"
+        return "({}, {}, {})".format(self.i, self.j, self.c)
 
 
 def build_graph(matrix):
     r = len(matrix)
     c = len(matrix[0])
 
+    nodes = {(i, j): Graph_Node(i, j, matrix[i][j])
+             for i, j in it.product(range(r), range(c))}
     adj = {}
 
-    for i in range(r):
-        for j in range(c):
-            node = Graph_Node(i, j, matrix[i][j])
-            adj_node = adj[node] = set()
-            offsets = it.product([-1, 0, 1], repeat=2)
-            for oi, oj in offsets:
-                i2, j2 = i + oi, j + oj
-                if 0 <= i2 < r and 0 <= j2 < c and (i2 != i or j2 != j):
-                    n = Graph_Node(i2, j2, matrix[i2][j2])
-                    adj_node.add(n)
-                    n.p = node
+    for i, j in it.product(range(r), range(c)):
+        node = nodes[i, j]
+        adj_node = adj[node] = set()
+
+        for oi, oj in it.product([-1, 0, 1], repeat=2):
+            i2, j2 = i + oi, j + oj
+
+            if 0 <= i2 < r and 0 <= j2 < c and (i, j) != (i2, j2):
+                n = nodes[i2, j2]
+                adj_node.add(n)
 
     return adj
 
 
 def generate_walks(matrix):
     for node in matrix:
-        queue = deque([(node, 1)])
-        path = []
-        while queue:
-            current, depth = queue.pop()
+        yield from generate_walks_from_node(matrix, node)
 
-            path = []
-            c = current
-            while c:
-                path.append(c)
-                c = c.p
 
-            if current in path[1:]:
+def generate_walks_from_node(matrix, node):
+    queue = deque([[node]])
+
+    while queue:
+        path = queue.pop()
+        current = path[-1]
+
+        yield path
+
+        for adj in matrix.get(current, []):
+            if adj in path:
                 continue
-
-            yield path
-
-            for adj in matrix[node]:
-                queue.appendleft((adj, depth + 1))
+            queue.appendleft(path + [adj])
 
 
 def main():
-    matrix = [['a', 'b', 'c'],
-              ['d', 'e', 'f'],
-              ['g', 'h', 'i']]
+    matrix = [list('abcd'), list('efgh'), list('ijkl'), list('mnop')]
 
     adj = build_graph(matrix)
 
