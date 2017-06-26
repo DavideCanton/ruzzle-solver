@@ -1,0 +1,13 @@
+{
+    "board": [
+        "oslc",
+        "elai",
+        "tant",
+        "myse"
+    ],    
+    "mults": {
+        "0-1": "DL",
+        "2-3": "TL"
+    },
+    "lang": "it"
+}
