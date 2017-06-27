@@ -1,5 +1,6 @@
 import itertools as it
 from collections import deque
+from strategy import TrieStrategy
 
 
 class GraphNode:
@@ -40,30 +41,30 @@ def build_graph(matrix):
     return adj
 
 
-def generate_walks(matrix, minlength=None, maxlength=None):
+def generate_walks(matrix, strategy):
     for node in matrix:
-        yield from generate_walks_from_node(matrix, node, minlength, maxlength)
+        yield from generate_walks_from_node(matrix, strategy, node)
 
 
-def generate_walks_from_node(matrix, node, minlength=None, maxlength=None):
-    queue = deque([[node]])
+def generate_walks_from_node(matrix, strategy, node):
+    initial_item = strategy.get_init_item(node)
 
-    if minlength is None:
-        minlength = 1
-    if maxlength is None:
-        maxlength = len(matrix)
+    if not initial_item:
+        return
+
+    queue = deque([initial_item])
 
     while queue:
-        path = queue.pop()
-        current = path[-1]
+        data = queue.pop()
+        current = strategy.get_current(data)
 
-        if minlength <= len(path) <= maxlength:
-            yield path
+        if strategy.can_yield(data):
+            yield strategy.extract(data)
 
         for adj in matrix.get(current, []):
-            if adj in path:
+            if not strategy.can_enqueue(adj, current, data):
                 continue
-            queue.appendleft(path + [adj])
+            queue.appendleft(strategy.get_next_element(adj, current, data))
 
 
 def main():
@@ -74,7 +75,9 @@ def main():
     for (key, value) in adj.items():
         print(key, "->", list(map(str, value)))
 
-    for walk in generate_walks(adj, minlength=4, maxlength=4):
+    strategy = TrieStrategy(None, minlength=4, maxlength=4)
+
+    for walk in generate_walks(adj, strategy):
         print("".join(map(lambda n: str(n.value), walk)))
 
 

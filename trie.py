@@ -5,6 +5,12 @@ class Node:
         self.parent = None
         self.is_end = is_end
 
+    def has_child(self, child):
+        return child in self.children
+
+    def get_child(self, child):
+        return self.children[child]
+
 
 class Trie:
     def __init__(self):
@@ -14,8 +20,22 @@ class Trie:
     def from_words(words):
         trie = Trie()
 
-        for word in words:
-            trie.add_word(word)
+        current = trie.root
+        current_word = ""
+
+        for word in sorted(words):
+            while word[:len(current_word)] != current_word:
+                current = current.parent
+                current_word = current_word[:-1]
+
+            for char in word[len(current_word):]:
+                if not current.has_child(char):
+                    current.children[char] = Node(char)
+                    current.children[char].parent = current
+                current = current.get_child(char)
+
+            current.is_end = True
+            current_word = word
 
         return trie
 
@@ -23,10 +43,10 @@ class Trie:
         current = self.root
 
         for char in word:
-            if char not in current.children:
+            if not current.has_child(char):
                 current.children[char] = Node(char)
                 current.children[char].parent = current
-            current = current.children[char]
+            current = current.get_child(char)
 
         current.is_end = True
 
@@ -34,9 +54,9 @@ class Trie:
         current = self.root
 
         for char in word:
-            if char not in current.children:
+            if not current.has_child(char):
                 return False
-            current = current.children[char]
+            current = current.get_child(char)
 
         return current.is_end
 
@@ -59,7 +79,7 @@ class Trie:
 
 
 def main():
-    words = ["casa", "pippo", "prova"]
+    words = ["casa", "casino", "casotto", "casinino", "casottone"]
     trie = Trie.from_words(words)
 
     print(list(trie.words()))

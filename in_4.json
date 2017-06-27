@@ -1,0 +1,13 @@
+{
+    "board": [
+        "vitr",
+        "iaco",
+        "itlo",
+        "aoar"
+    ],    
+    "mults": {
+        "1-0": "DL",
+        "3-3": "TL"
+    },
+    "lang": "it"
+}
