@@ -53,22 +53,30 @@ def load_board_from_file(name):
     return (board, points, mults)
 
 
-def random_board(n):
+def random_board(r, c=None):
+    if c is None:
+        c = r
+
     letters = []
 
-    for _ in range(n * 2 - 2):
+    for _ in range(int(r * c * 0.4)):
         letters.append(random.choice("aeiou"))
 
     cons = list(set(string.ascii_lowercase) - set("aeiou"))
+    remaining = r * c - len(letters)
 
-    for _ in range(n * n - n * 2 + 2):
+    for _ in range(remaining):
         letters.append(random.choice(cons))
 
     random.shuffle(letters)
 
-    board = [letters[i:i + n] for i in range(0, n * n, n)]
+    board = split_list(c, letters)
 
     return board, LETTER_SCORE["it"], {}
+
+
+def split_list(n, lst):
+    return [list(el) for el in zip(*[iter(lst)] * n)]
 
 
 def print_header(size):
@@ -92,8 +100,8 @@ def print_board(board):
 
 
 def main():
-    # board, points, mults = load_board_from_file("in_4.json")
-    board, points, mults = random_board(10)
+    # board, points, mults = load_board_from_file("in_3.json")
+    board, points, mults = random_board(3, 18)
 
     print_board(board)
 
