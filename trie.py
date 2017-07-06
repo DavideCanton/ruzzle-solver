@@ -24,18 +24,15 @@ class Trie:
         cur_word = ""
 
         for word in sorted(words):
-            cur_word, cur_node = Trie._build_word(word, cur_word, cur_node)
+            cur_word, cur_node = Trie._insert_word(word, cur_word, cur_node)
 
         return trie
 
     @staticmethod
-    def _build_word(word, cur_word, cur_node):
+    def _insert_word(word, cur_word, cur_node):
         cur_word, cur_node = Trie._backtrack_word(word, cur_word, cur_node)
-
-        cur_node = Trie._traverse_down(cur_node, word[len(cur_word):])
-        cur_word = word
-
-        return cur_word, cur_node
+        cur_node = Trie._traverse_and_insert(cur_node, word[len(cur_word):])
+        return word, cur_node
 
     @staticmethod
     def _backtrack_word(word, current_word, current):
@@ -45,7 +42,7 @@ class Trie:
         return current_word, current
 
     @staticmethod
-    def _traverse_down(current, word):
+    def _traverse_and_insert(current, word):
         for char in word:
             if not current.has_child(char):
                 current.children[char] = Node(char)
@@ -57,7 +54,7 @@ class Trie:
         return current
 
     def add_word(self, word):
-        Trie._traverse_down(self.root, word)
+        Trie._traverse_and_insert(self.root, word)
 
     def __contains__(self, word):
         current = self.root

@@ -26,11 +26,8 @@ def build_graph(matrix):
     nodes = {(i, j): GraphNode(i, j, matrix[i][j])
              for i, j in it.product(range(rows), range(cols))}
 
-    adjacents = {}
-
-    for i, j in it.product(range(rows), range(cols)):
-        node = nodes[i, j]
-        adjacents[node] = get_adjacents(i, j, rows, cols, nodes)
+    adjacents = {nodes[i, j]: get_adjacents(i, j, rows, cols, nodes)
+                 for i, j in it.product(range(rows), range(cols))}
 
     return adjacents
 

@@ -1,3 +1,6 @@
+import sys
+
+
 class Strategy:
     def get_current(self, data):
         raise NotImplementedError
@@ -23,7 +26,7 @@ class TrieStrategy(Strategy):
         if minlength is None:
             minlength = 1
         if maxlength is None:
-            maxlength = 10000
+            maxlength = sys.maxsize
 
         self.trie = trie
         self.minlength = minlength
@@ -46,9 +49,7 @@ class TrieStrategy(Strategy):
 
     def can_yield(self, data):
         path_len = len(TrieStrategy._get_path(data))
-
         is_correct_len = self.minlength <= path_len <= self.maxlength
-
         is_end = TrieStrategy._get_trie_node(data).is_end
 
         return is_correct_len and is_end
