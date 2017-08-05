@@ -54,7 +54,7 @@ class TrieStrategy(Strategy):
         path = TrieStrategy._get_path(data)
         trie_node = TrieStrategy._get_trie_node(data)
 
-        if adj in path:
+        if adj in path or len(path) == self.maxlength:
             return False
 
         return trie_node.has_child(adj.value)

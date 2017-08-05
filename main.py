@@ -92,8 +92,8 @@ def print_board(board):
 
 
 def main():
-    # board, points, mults = load_board_from_file("in_4.json")
-    board, points, mults = random_board(10)
+    board, points, mults = load_board_from_file("in_3.json")
+    # board, points, mults = random_board(100)
 
     print_board(board)
 
