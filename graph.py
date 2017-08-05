@@ -25,20 +25,30 @@ def build_graph(matrix):
 
     nodes = {(i, j): GraphNode(i, j, matrix[i][j])
              for i, j in it.product(range(rows), range(cols))}
-    adj = {}
 
-    for i, j in it.product(range(rows), range(cols)):
-        node = nodes[i, j]
-        adj_node = adj[node] = set()
+    adjacents = {nodes[i, j]: get_adjacents(i, j, rows, cols, nodes)
+                 for i, j in it.product(range(rows), range(cols))}
 
-        for offset_i, offset_j in it.product([-1, 0, 1], repeat=2):
-            i_2, j_2 = i + offset_i, j + offset_j
+    return adjacents
 
-            if 0 <= i_2 < rows and 0 <= j_2 < cols and (i, j) != (i_2, j_2):
-                node = nodes[i_2, j_2]
-                adj_node.add(node)
 
-    return adj
+def get_adjacents(i, j, rows, cols, nodes):
+    adjacents_of_node = set()
+
+    for offset_i, offset_j in it.product([-1, 0, 1], repeat=2):
+        adj_i, adj_j = i + offset_i, j + offset_j
+
+        if is_valid_adjacent(i, j, rows, cols, adj_i, adj_j):
+            node = nodes[adj_i, adj_j]
+            adjacents_of_node.add(node)
+
+    return adjacents_of_node
+
+
+def is_valid_adjacent(i, j, rows, cols, adj_i, adj_j):
+    return (adj_i in range(rows) and
+            adj_j in range(cols) and
+            (i, j) != (adj_i, adj_j))
 
 
 def generate_walks(matrix, strategy):

@@ -20,28 +20,29 @@ class Trie:
     def from_words(words):
         trie = Trie()
 
-        current = trie.root
-        current_word = ""
+        cur_node = trie.root
+        cur_word = ""
 
         for word in sorted(words):
-            while word[:len(current_word)] != current_word:
-                current = current.parent
-                current_word = current_word[:-1]
-
-            for char in word[len(current_word):]:
-                if not current.has_child(char):
-                    current.children[char] = Node(char)
-                    current.children[char].parent = current
-                current = current.get_child(char)
-
-            current.is_end = True
-            current_word = word
+            cur_word, cur_node = Trie._insert_word(word, cur_word, cur_node)
 
         return trie
 
-    def add_word(self, word):
-        current = self.root
+    @staticmethod
+    def _insert_word(word, cur_word, cur_node):
+        cur_word, cur_node = Trie._backtrack_word(word, cur_word, cur_node)
+        cur_node = Trie._traverse_and_insert(cur_node, word[len(cur_word):])
+        return word, cur_node
 
+    @staticmethod
+    def _backtrack_word(word, current_word, current):
+        while word[:len(current_word)] != current_word:
+            current = current.parent
+            current_word = current_word[:-1]
+        return current_word, current
+
+    @staticmethod
+    def _traverse_and_insert(current, word):
         for char in word:
             if not current.has_child(char):
                 current.children[char] = Node(char)
@@ -49,6 +50,11 @@ class Trie:
             current = current.get_child(char)
 
         current.is_end = True
+
+        return current
+
+    def add_word(self, word):
+        Trie._traverse_and_insert(self.root, word)
 
     def __contains__(self, word):
         current = self.root
