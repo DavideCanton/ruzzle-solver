@@ -1,22 +1,29 @@
+import abc
 import sys
 
 
-class Strategy:
+class Strategy(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def get_current(self, data):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def can_yield(self, data):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def can_enqueue(self, adj, current, data):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_next_element(self, adj, current, data):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def extract(self, data):
         raise NotImplementedError
 
+    @abc.abstractmethod
     def get_init_item(self, node):
         raise NotImplementedError
 
