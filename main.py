@@ -1,4 +1,4 @@
-from loaders import RandomLoader
+from loaders import FileLoader, RandomLoader
 from pathlib import Path
 from operator import itemgetter
 import logging
@@ -28,7 +28,7 @@ def configure_logger(use_file=False):
 
 
 def read_words_from_file():
-    with Path("./660000_parole_italiane.txt").open() as f_in:
+    with Path("./data/660000_parole_italiane.txt").open() as f_in:
         for line in f_in:
             yield line.strip()
 
@@ -80,8 +80,8 @@ def print_board(board):
 def main():
     configure_logger(use_file=False)
 
-    # board, points, mults = FileLoader("in_3.json", LETTER_SCORE).load()
-    board, points, mults = RandomLoader(LETTER_SCORE, 4, 4).load()
+    board, points, mults = FileLoader("data/in_big.json", LETTER_SCORE).load()
+    # board, points, mults = RandomLoader(LETTER_SCORE, 4, 4).load()
 
     print_board(board)
 
