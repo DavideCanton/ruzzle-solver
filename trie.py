@@ -1,3 +1,9 @@
+import string
+import operator
+import itertools as it
+import multiprocessing as mp
+
+
 class Node:
     def __init__(self, char, is_end=False):
         self.char = char
@@ -17,13 +23,34 @@ class Trie:
         self.root = Node(None)
 
     @staticmethod
-    def from_words(words):
+    def from_words(words, parallelism_degree=None):
+        words = sorted(words)
+        words_dict = [list(g) for k, g in it.groupby(words, key=operator.itemgetter(0))]
+
+        if parallelism_degree is None:
+            parallelism_degree = mp.cpu_count()
+        else:
+            parallelism_degree = max(1, parallelism_degree)
+
+        with mp.Pool(parallelism_degree) as p:
+            tries = p.map(Trie._make_trie, words_dict)
+
+        trie = Trie()
+        for t in tries:
+            r = t.root
+            e = next(iter(r.children.items()))
+            trie.root.children[e[0]] = e[1]
+
+        return trie
+
+    @staticmethod
+    def _make_trie(words):
         trie = Trie()
 
         cur_node = trie.root
         cur_word = ""
 
-        for word in sorted(words):
+        for word in words:
             cur_word, cur_node = Trie._insert_word(word, cur_word, cur_node)
 
         return trie
