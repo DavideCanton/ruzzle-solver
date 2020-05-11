@@ -13,18 +13,17 @@ LOGGER = None
 
 
 def configure_logger(use_file=False):
-    global LOGGER
-
     format_msg = '%(message)s'
     now = datetime.now().strftime("%Y%m%d%H%M%S")
     args = dict(format=format_msg)
 
     if use_file:
-        args["filename"] = "{}_ruzzle.log".format(now)
+        args["filename"] = f"{now}_ruzzle.log"
 
     logging.basicConfig(**args)
-    LOGGER = logging.getLogger(name="ruzzle-solver")
-    LOGGER.setLevel(logging.INFO)
+    logger = logging.getLogger(name="ruzzle-solver")
+    logger.setLevel(logging.INFO)
+    return logger
 
 
 def read_words_from_file():
@@ -63,7 +62,7 @@ def print_header(size):
 def print_row(row):
     buf = []
     for char in row:
-        buf.append("| {} ".format(char))
+        buf.append(f"| {char} ")
     buf.append("|")
     header = "".join(buf)
     LOGGER.info(header)
@@ -78,7 +77,8 @@ def print_board(board):
 
 
 def main():
-    configure_logger(use_file=False)
+    global LOGGER
+    LOGGER = configure_logger(use_file=True)
 
     board, points, mults = FileLoader("data/in_big.json", LETTER_SCORE).load()
     # board, points, mults = RandomLoader(LETTER_SCORE, 4, 4).load()
@@ -105,7 +105,7 @@ def main():
         if words.get(word, -1) < word_points:
             words[word] = word_points
 
-    for (word, word_points) in sorted(words.items(), key=itemgetter(1)):
+    for (word, word_points) in sorted(words.items(), key=itemgetter(1), reverse=True):
         LOGGER.info("%s - Value: %d", word, word_points)
 
     LOGGER.info("-" * 30)

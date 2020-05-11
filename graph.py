@@ -16,7 +16,7 @@ class GraphNode:
         return self.__str__()
 
     def __str__(self):
-        return "({}, {}, {})".format(self.i, self.j, self.value)
+        return f"({self.i}, {self.j}, {self.value})"
 
 
 def build_graph(matrix):
@@ -26,8 +26,10 @@ def build_graph(matrix):
     nodes = {(i, j): GraphNode(i, j, matrix[i][j])
              for i, j in it.product(range(rows), range(cols))}
 
-    adjacents = {nodes[i, j]: get_adjacents(i, j, rows, cols, nodes)
-                 for i, j in it.product(range(rows), range(cols))}
+    adjacents = {
+        nodes[i, j]: get_adjacents(i, j, rows, cols, nodes)
+        for i, j in it.product(range(rows), range(cols))
+    }
 
     return adjacents
 
@@ -46,9 +48,8 @@ def get_adjacents(i, j, rows, cols, nodes):
 
 
 def is_valid_adjacent(i, j, rows, cols, adj_i, adj_j):
-    return (adj_i in range(rows) and
-            adj_j in range(cols) and
-            (i, j) != (adj_i, adj_j))
+    return (adj_i in range(rows) and adj_j in range(cols) and (i, j) !=
+            (adj_i, adj_j))
 
 
 def generate_walks(matrix, strategy):
@@ -84,11 +85,6 @@ def main():
 
     for (key, value) in adj.items():
         print(key, "->", list(map(str, value)))
-
-    strategy = TrieStrategy(None, minlength=4, maxlength=4)
-
-    for walk in generate_walks(adj, strategy):
-        print("".join(map(lambda n: str(n.value), walk)))
 
 
 if __name__ == "__main__":
