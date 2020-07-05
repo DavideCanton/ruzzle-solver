@@ -105,12 +105,15 @@ def main():
         if words.get(word, -1) < word_points:
             words[word] = word_points
 
-    for (word, word_points) in sorted(words.items(), key=itemgetter(1), reverse=True):
-        LOGGER.info("%s - Value: %d", word, word_points)
+    if words:
+        for (word, word_points) in sorted(words.items(),
+                                          key=itemgetter(1),
+                                          reverse=True):
+            LOGGER.info("%s - Value: %d", word, word_points)
 
-    LOGGER.info("-" * 30)
-    LOGGER.info("Found %d words.", len(words))
-    LOGGER.info("Best word: %s with value: %d", word, word_points)
+        LOGGER.info("-" * 30)
+        LOGGER.info("Found %d words.", len(words))
+        LOGGER.info("Best word: %s with value: %d", word, word_points)
 
 
 if __name__ == "__main__":

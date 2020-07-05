@@ -23,23 +23,29 @@ class Trie:
         self.root = Node(None)
 
     @staticmethod
-    def from_words(words, parallelism_degree=None):
+    def from_words(words, use_parallelism=True, parallelism_degree=None):
         words = sorted(words)
-        words_dict = [list(g) for k, g in it.groupby(words, key=operator.itemgetter(0))]
 
-        if parallelism_degree is None:
-            parallelism_degree = mp.cpu_count()
+        if use_parallelism:
+            words_dict = [
+                list(g)
+                for k, g in it.groupby(words, key=operator.itemgetter(0))
+            ]
+            if parallelism_degree is None:
+                parallelism_degree = mp.cpu_count()
+            else:
+                parallelism_degree = max(1, parallelism_degree)
+
+            with mp.Pool(parallelism_degree) as p:
+                tries = p.map(Trie._make_trie, words_dict)
         else:
-            parallelism_degree = max(1, parallelism_degree)
-
-        with mp.Pool(parallelism_degree) as p:
-            tries = p.map(Trie._make_trie, words_dict)
+            tries = [Trie._make_trie(words)]
 
         trie = Trie()
         for t in tries:
             r = t.root
-            e = next(iter(r.children.items()))
-            trie.root.children[e[0]] = e[1]
+            for (c, rr) in r.children.items():
+                trie.root.children[c] = rr
 
         return trie
 
@@ -112,7 +118,9 @@ class Trie:
 
 
 def main():
-    words = ["casa", "casino", "casotto", "casinino", "casottone"]
+    words = [
+        "casa", "casino", "casotto", "casinino", "casottone", "pippo", "pluto"
+    ]
     trie = Trie.from_words(words)
 
     print(list(trie.words()))
