@@ -138,3 +138,6 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 *.log
+
+.venv/
+.mypy_cache/

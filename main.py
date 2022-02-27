@@ -1,19 +1,19 @@
-from loaders import FileLoader, RandomLoader
-from pathlib import Path
-from operator import itemgetter
 import logging
 from datetime import datetime
+from operator import itemgetter
+from pathlib import Path
+from typing import Generator
 
-from graph import build_graph, generate_walks
-from points import LETTER_SCORE
-from trie import Trie
-from strategy import TrieStrategy
-
-LOGGER = None
+from ruzzle_solver.graph import GraphNode, build_graph
+from ruzzle_solver.loaders import Board, FileLoader, Mults, Points
+from ruzzle_solver.points import LETTER_SCORE
+from ruzzle_solver.run import generate_walks
+from ruzzle_solver.strategy import TrieStrategy
+from ruzzle_solver.trie import Trie
 
 
 def configure_logger(use_file=False):
-    format_msg = '%(message)s'
+    format_msg = "%(message)s"
     now = datetime.now().strftime("%Y%m%d%H%M%S")
     args = dict(format=format_msg)
 
@@ -26,19 +26,22 @@ def configure_logger(use_file=False):
     return logger
 
 
-def read_words_from_file():
+LOGGER = configure_logger(use_file=False)
+
+
+def read_words_from_file() -> Generator[str, None, None]:
     with Path("./data/660000_parole_italiane.txt").open() as f_in:
         for line in f_in:
             yield line.strip()
 
 
-def get_word_points(path, points, mults):
+def get_word_points(path: list[GraphNode], points: Points, mults: Mults) -> int:
     word_points = 0
     word_mult = 1
 
     for node in path:
         node_points = points[node.value.upper()]
-        mult_val, mult_type = mults.get((node.i, node.j), "  ")
+        mult_val, mult_type = list(mults.get((node.i, node.j), "  "))
 
         if mult_type == "L":
             node_points *= 2 if mult_val == "D" else 3
@@ -50,7 +53,7 @@ def get_word_points(path, points, mults):
     return word_points * word_mult
 
 
-def print_header(size):
+def print_header(size: int):
     buf = []
     for _ in range(size):
         buf.append("+---")
@@ -59,7 +62,7 @@ def print_header(size):
     LOGGER.info(header)
 
 
-def print_row(row):
+def print_row(row: list[str]):
     buf = []
     for char in row:
         buf.append(f"| {char} ")
@@ -68,7 +71,7 @@ def print_row(row):
     LOGGER.info(header)
 
 
-def print_board(board):
+def print_board(board: Board):
     for row in board:
         print_header(len(row))
         print_row(row)
@@ -77,11 +80,12 @@ def print_board(board):
 
 
 def main():
-    global LOGGER
-    LOGGER = configure_logger(use_file=True)
+    info = FileLoader("data/in_1.json", LETTER_SCORE).load()
+    # info = RandomLoader(LETTER_SCORE, 4, 4).load()
 
-    board, points, mults = FileLoader("data/in_big.json", LETTER_SCORE).load()
-    # board, points, mults = RandomLoader(LETTER_SCORE, 4, 4).load()
+    board = info.board
+    points = info.points
+    mults = info.mults
 
     print_board(board)
 
@@ -106,14 +110,13 @@ def main():
             words[word] = word_points
 
     if words:
-        for (word, word_points) in sorted(words.items(),
-                                          key=itemgetter(1),
-                                          reverse=True):
+        sorted_words = sorted(words.items(), key=itemgetter(1), reverse=True)
+        for (word, word_points) in sorted_words:
             LOGGER.info("%s - Value: %d", word, word_points)
 
         LOGGER.info("-" * 30)
         LOGGER.info("Found %d words.", len(words))
-        LOGGER.info("Best word: %s with value: %d", word, word_points)
+        LOGGER.info("Best word: %s with value: %d", *(sorted_words[0]))
 
 
 if __name__ == "__main__":

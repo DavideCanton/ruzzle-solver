@@ -1,4 +1,4 @@
-LETTER_SCORE = {
+LETTER_SCORE: dict[str, dict[str, int]] = {
     "en": {
         "A": 1,
         "B": 4,

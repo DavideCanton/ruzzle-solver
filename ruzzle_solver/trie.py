@@ -1,35 +1,41 @@
-import string
-import operator
 import itertools as it
 import multiprocessing as mp
+import operator
+from dataclasses import dataclass, field
+from typing import Generator, Iterable
 
 
+@dataclass(eq=True)
 class Node:
-    def __init__(self, char, is_end=False):
-        self.char = char
-        self.children = {}
-        self.parent = None
-        self.is_end = is_end
+    char: str
+    children: dict[str, "Node"] = field(default_factory=dict)
+    parent: "Node | None" = field(default=None)
+    is_end: bool = field(default=False)
 
-    def has_child(self, child):
+    def has_child(self, child: str):
         return child in self.children
 
-    def get_child(self, child):
+    def get_child(self, child: str):
         return self.children[child]
 
 
 class Trie:
+    root: Node
+
     def __init__(self):
         self.root = Node(None)
 
     @staticmethod
-    def from_words(words, use_parallelism=True, parallelism_degree=None):
+    def from_words(
+        words: Iterable[str],
+        use_parallelism: bool = True,
+        parallelism_degree: int | None = None,
+    ) -> "Trie":
         words = sorted(words)
 
         if use_parallelism:
             words_dict = [
-                list(g)
-                for k, g in it.groupby(words, key=operator.itemgetter(0))
+                list(g) for _, g in it.groupby(words, key=operator.itemgetter(0))
             ]
             if parallelism_degree is None:
                 parallelism_degree = mp.cpu_count()
@@ -50,7 +56,7 @@ class Trie:
         return trie
 
     @staticmethod
-    def _make_trie(words):
+    def _make_trie(words: Iterable[str]) -> "Trie":
         trie = Trie()
 
         cur_node = trie.root
@@ -62,20 +68,27 @@ class Trie:
         return trie
 
     @staticmethod
-    def _insert_word(word, cur_word, cur_node):
+    def _insert_word(word: str, cur_word: str, cur_node: Node) -> tuple[str, Node]:
         cur_word, cur_node = Trie._backtrack_word(word, cur_word, cur_node)
-        cur_node = Trie._traverse_and_insert(cur_node, word[len(cur_word):])
+        cur_node = Trie._traverse_and_insert(cur_node, word[len(cur_word) :])
         return word, cur_node
 
     @staticmethod
-    def _backtrack_word(word, current_word, current):
-        while word[:len(current_word)] != current_word:
-            current = current.parent
+    def _backtrack_word(
+        word: str, current_word: str, current: Node
+    ) -> tuple[str, Node]:
+        c: Node | None = current
+
+        while word[: len(current_word)] != current_word:
+            assert c is not None
+            c = c.parent
             current_word = current_word[:-1]
-        return current_word, current
+
+        assert c is not None
+        return current_word, c
 
     @staticmethod
-    def _traverse_and_insert(current, word):
+    def _traverse_and_insert(current: Node, word: str) -> Node:
         for char in word:
             if not current.has_child(char):
                 current.children[char] = Node(char)
@@ -86,10 +99,10 @@ class Trie:
 
         return current
 
-    def add_word(self, word):
+    def add_word(self, word: str) -> None:
         Trie._traverse_and_insert(self.root, word)
 
-    def __contains__(self, word):
+    def __contains__(self, word: str) -> bool:
         current = self.root
 
         for char in word:
@@ -99,8 +112,8 @@ class Trie:
 
         return current.is_end
 
-    def words(self):
-        cur_word = []
+    def words(self) -> Generator[str, None, None]:
+        cur_word: list[str] = []
         stack = [(self.root, -1)]
 
         while stack:
@@ -118,9 +131,7 @@ class Trie:
 
 
 def main():
-    words = [
-        "casa", "casino", "casotto", "casinino", "casottone", "pippo", "pluto"
-    ]
+    words = ["casa", "casino", "casotto", "casinino", "casottone", "pippo", "pluto"]
     trie = Trie.from_words(words)
 
     print(list(trie.words()))
