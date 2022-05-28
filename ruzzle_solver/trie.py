@@ -12,11 +12,8 @@ class Node:
     parent: "Node | None" = field(default=None)
     is_end: bool = field(default=False)
 
-    def has_child(self, child: str):
-        return child in self.children
-
-    def get_child(self, child: str):
-        return self.children[child]
+    def get_child(self, child: str) -> "Node | None":
+        return self.children.get(child)
 
 
 class Trie:
@@ -90,10 +87,10 @@ class Trie:
     @staticmethod
     def _traverse_and_insert(current: Node, word: str) -> Node:
         for char in word:
-            if not current.has_child(char):
-                current.children[char] = Node(char)
-                current.children[char].parent = current
-            current = current.get_child(char)
+            if (child := current.get_child(char)) is None:
+                child = current.children[char] = Node(char, parent=current)
+
+            current = child
 
         current.is_end = True
 
@@ -106,9 +103,10 @@ class Trie:
         current = self.root
 
         for char in word:
-            if not current.has_child(char):
+            child = current.get_child(char)
+            if child is None:
                 return False
-            current = current.get_child(char)
+            current = child
 
         return current.is_end
 

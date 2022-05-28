@@ -74,7 +74,7 @@ class TrieStrategy(Strategy[S]):
         if adj in path or len(path) == self.maxlength:
             return False
 
-        return trie_node.has_child(adj.value)
+        return trie_node.get_child(adj.value) is not None
 
     def get_next_element(self, adj: GraphNode, _current: GraphNode, data: S) -> S:
         path = TrieStrategy._get_path(data) + [adj]
@@ -86,9 +86,7 @@ class TrieStrategy(Strategy[S]):
         return TrieStrategy._get_path(data)
 
     def get_init_item(self, node: GraphNode) -> S | None:
-        if not self.trie.root.has_child(node.value):
+        if (child := self.trie.root.get_child(node.value)) is None:
             return None
-
-        child = self.trie.root.get_child(node.value)
 
         return TrieStrategy._build_data([node], child)

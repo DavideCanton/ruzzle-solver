@@ -8,7 +8,6 @@ class GraphNode:
     j: int
     value: str
 
-
 IndexTuple = tuple[int, int]
 Graph = dict[GraphNode, set[GraphNode]]
 
