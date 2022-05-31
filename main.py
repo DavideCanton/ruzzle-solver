@@ -179,13 +179,18 @@ def main():
 
     strategy = TrieStrategy(trie, minlength=3)
 
+    found = False
     for walk in generate_walks(graph, strategy):
         word = "".join(n.value for n in walk)
+        found = True
 
         word_points = get_word_points(walk, points, mults)
         if words.get(word, -1) < word_points:
             words[word] = word_points
             walks[word] = walk
+
+    if not found:
+        logger.info("No words found")
 
     if words:
         sorted_words = sorted(words.items(), key=itemgetter(1), reverse=True)
