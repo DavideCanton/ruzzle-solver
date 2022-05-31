@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Generator
 
 from ruzzle_solver.graph import GraphNode, build_graph
-from ruzzle_solver.loaders import Board, FileLoader, Mults, Points
+from ruzzle_solver.loaders import Board, FileLoader, Mults, Points, RandomLoader
 from ruzzle_solver.points import LETTER_SCORE
 from ruzzle_solver.run import generate_walks
 from ruzzle_solver.strategy import TrieStrategy
@@ -83,19 +83,40 @@ def create_parser():
     configure_logger(use_file=False)
 
     parser = argparse.ArgumentParser(description="Solver for ruzzle.")
-    parser.add_argument("file", help="The json file")
+    subparsers = parser.add_subparsers(help="sub command")
+
     parser.add_argument(
         "-n",
         "--num",
         help="The num of processes",
         choices=["auto"] + [str(n) for n in range(1, mp.cpu_count() + 1)],
     )
+    parser.add_argument(
+        "-f",
+        "--force",
+        help="Regenerats the cache",
+        action="store_true",
+        default=False,
+    )
+
+    parser_file = subparsers.add_parser(
+        "file", help="Reads the schema from a json file."
+    )
+    parser_file.add_argument(
+        "file", type=argparse.FileType("r", encoding="UTF-8"), help="The json file"
+    )
+    parser_file.set_defaults(action="file")
+
+    parser_rand = subparsers.add_parser("rand", help="Generates a random schema.")
+    parser_rand.add_argument("rows", type=int, help="The number of rows.")
+    parser_rand.add_argument("cols", type=int, help="The number of columns.")
+    parser_rand.set_defaults(action="rand")
+
     return parser
 
 
 def main():
     args = create_parser().parse_args()
-    file = args.file
     num = args.num
     if num is None:
         use_parallelism = False
@@ -108,13 +129,17 @@ def main():
         parallelism_degree = int(num)
 
     logger.info(
-        "Using arguments file=%s, use_parallelism=%s, parallelism_degree=%s",
-        file,
+        "Concurrency arguments use_parallelism=%s, parallelism_degree=%s",
         use_parallelism,
         parallelism_degree,
     )
 
-    info = FileLoader(file, LETTER_SCORE).load()
+    if args.action == "file":
+        logger.info("Loading from file %s", args.file.name)
+        info = FileLoader(args.file, LETTER_SCORE).load()
+    else:
+        logger.info("Generating schema with size (%s, %s)", args.rows, args.cols)
+        info = RandomLoader(LETTER_SCORE, args.rows, args.cols).load()
 
     board = info.board
     points = info.points
@@ -125,7 +150,7 @@ def main():
     cache = Path("./tree.pickle")
     cache_loaded = False
 
-    if cache.exists():
+    if cache.exists() and not args.force:
         try:
             logger.info("Loading trie from cache")
             trie = pickle.load(cache.open("rb"))
@@ -149,8 +174,8 @@ def main():
 
     logger.info("Generating words...")
 
-    words = {}
-    walks = {}
+    words: dict[str, int] = {}
+    walks: dict[str, list[GraphNode]] = {}
 
     strategy = TrieStrategy(trie, minlength=3)
 
@@ -164,9 +189,9 @@ def main():
 
     if words:
         sorted_words = sorted(words.items(), key=itemgetter(1), reverse=True)
-        for (word, word_points) in sorted_words:
+        for (word, word_points) in sorted_words[:10]:
             walk = walks[word]
-            logger.info("%s - Value: %d [%s]", word, word_points, walk)
+            logger.info("%s - Value: %d", word, word_points)
 
         logger.info("-" * 30)
         logger.info("Found %d words.", len(words))

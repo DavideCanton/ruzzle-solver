@@ -4,6 +4,7 @@ import string
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TextIO
 
 Board = list[list[str]]
 Points = dict[str, int]
@@ -23,17 +24,16 @@ class Loader(metaclass=ABCMeta):
         pass
 
 
+@dataclass
 class FileLoader(Loader):
-    def __init__(self, name, letter_scores):
-        self.name = name
-        self.letter_scores = letter_scores
+    file: TextIO
+    letter_scores: dict[str, Points]
 
     def load(self) -> LoadedInfo:
         def build_key(k):
             return tuple(map(int, k.split("-")))
 
-        with Path(self.name).open() as in_json:
-            json_obj = json.load(in_json)
+        json_obj = json.load(self.file)
 
         board = json_obj["board"]
         points = self.letter_scores[json_obj["lang"]]
@@ -42,11 +42,11 @@ class FileLoader(Loader):
         return LoadedInfo(board, points, mults)
 
 
+@dataclass
 class RandomLoader(Loader):
-    def __init__(self, letter_scores, rows, cols=None):
-        self.rows = rows
-        self.cols = rows if cols is None else cols
-        self.letter_scores = letter_scores
+    letter_scores: dict[str, Points]
+    rows: int
+    cols: int
 
     def load(self) -> LoadedInfo:
         def split_list(cnt, lst):
