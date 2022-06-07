@@ -1,11 +1,13 @@
 from collections import deque
-from typing import Generator, TypeVar
+from typing import Generator, Sequence, TypeVar
 
 from .graph import Graph, GraphNode
 from .strategy import Strategy
 
 
-def generate_walks(matrix: Graph, strategy) -> Generator[list[GraphNode], None, None]:
+def generate_walks(
+    matrix: Graph, strategy
+) -> Generator[Sequence[GraphNode], None, None]:
     for node in matrix:
         yield from _generate_walks_from_node(matrix, strategy, node)
 
@@ -17,7 +19,7 @@ def _generate_walks_from_node(
     matrix: Graph,
     strategy: Strategy[T],
     node: GraphNode,
-) -> Generator[list[GraphNode], None, None]:
+) -> Generator[Sequence[GraphNode], None, None]:
     initial_item = strategy.get_init_item(node)
 
     if not initial_item:
@@ -27,12 +29,15 @@ def _generate_walks_from_node(
 
     while queue:
         data = queue.pop()
+
+        if (item := strategy.extract(data)) is not None:
+            yield item
+
+        if strategy.stop_exploring(data):
+            continue
+
         current = strategy.get_current(data)
-
-        if strategy.can_yield(data):
-            yield strategy.extract(data)
-
         for adj in matrix.get(current, []):
-            if not strategy.can_enqueue(adj, current, data):
+            if (next := strategy.get_next_element(adj, current, data)) is None:
                 continue
-            queue.appendleft(strategy.get_next_element(adj, current, data))
+            queue.appendleft(next)

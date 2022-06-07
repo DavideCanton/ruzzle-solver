@@ -1,7 +1,7 @@
 import sys
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
-from typing import Generic, TypeVar
+from typing import Generic, Sequence, TypeVar
 
 from .graph import GraphNode
 from .trie import Node, Trie
@@ -15,19 +15,15 @@ class Strategy(Generic[T], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def can_yield(self, data: T) -> bool:
+    def get_next_element(self, adj: GraphNode, current: GraphNode, data: T) -> T | None:
         raise NotImplementedError
 
     @abstractmethod
-    def can_enqueue(self, adj: GraphNode, current: GraphNode, data: T) -> bool:
+    def stop_exploring(self, data: T) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def get_next_element(self, adj: GraphNode, current: GraphNode, data: T) -> T:
-        raise NotImplementedError
-
-    @abstractmethod
-    def extract(self, data: T) -> list[GraphNode]:
+    def extract(self, data: T) -> Sequence[GraphNode] | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -35,7 +31,39 @@ class Strategy(Generic[T], metaclass=ABCMeta):
         raise NotImplementedError
 
 
-S = tuple[list[GraphNode], Node]
+
+
+@dataclass
+class SeqNode:
+    last: GraphNode
+    length: int
+    prev: "SeqNode | None"
+    items: frozenset[GraphNode]
+
+    @staticmethod
+    def single(node: GraphNode):
+        return SeqNode(node, 1, None, frozenset([node]))
+
+    @staticmethod
+    def add(node: GraphNode, seq: "SeqNode"):
+        return SeqNode(node, seq.length + 1, seq, seq.items | frozenset([node]))
+
+    def __len__(self):
+        return self.length
+
+    def __contains__(self, node: GraphNode):
+        return node in self.items
+
+    def to_list(self) -> list[GraphNode]:
+        ret = []
+        cur: SeqNode | None = self
+        while cur:
+            ret.append(cur.last)
+            cur = cur.prev
+        return ret[::-1]
+
+
+S = tuple[SeqNode, Node]
 
 
 @dataclass
@@ -44,49 +72,34 @@ class TrieStrategy(Strategy[S]):
     minlength: int = field(default=1)
     maxlength: int = field(default=sys.maxsize)
 
-    @staticmethod
-    def _get_path(data: S) -> list[GraphNode]:
-        return data[0]
-
-    @staticmethod
-    def _get_trie_node(data: S) -> Node:
-        return data[1]
-
-    @staticmethod
-    def _build_data(path, trie_node) -> S:
-        return (path, trie_node)
-
     def get_current(self, data: S) -> GraphNode:
-        return TrieStrategy._get_path(data)[-1]
+        return data[0].last
 
-    def can_yield(self, data: S) -> bool:
-        path_len = len(TrieStrategy._get_path(data))
-        is_correct_len = self.minlength <= path_len <= self.maxlength
-        is_end = TrieStrategy._get_trie_node(data).is_end
-
-        return is_correct_len and is_end
-
-    def can_enqueue(self, adj: GraphNode, _current: GraphNode, data: S) -> bool:
-        path = TrieStrategy._get_path(data)
-        trie_node = TrieStrategy._get_trie_node(data)
-
+    def stop_exploring(self, data: S) -> bool:
         # it's useless to expand further if reached maxlength
-        if adj in path or len(path) == self.maxlength:
-            return False
+        return len(data[0]) == self.maxlength
 
-        return trie_node.get_child(adj.value) is not None
+    def get_next_element(
+        self, adj: GraphNode, _current: GraphNode, data: S
+    ) -> S | None:
+        path, trie_node = data
 
-    def get_next_element(self, adj: GraphNode, _current: GraphNode, data: S) -> S:
-        path = TrieStrategy._get_path(data) + [adj]
-        trie_node = TrieStrategy._get_trie_node(data).get_child(adj.value)
+        if adj in path:
+            return None
 
-        return TrieStrategy._build_data(path, trie_node)
+        if (child := trie_node.get_child(adj.value)) is None:
+            return None
 
-    def extract(self, data: S) -> list[GraphNode]:
-        return TrieStrategy._get_path(data)
+        return (SeqNode.add(adj, path), child)
+
+    def extract(self, data: S) -> Sequence[GraphNode] | None:
+        if self.minlength <= len(data[0]) <= self.maxlength and data[1].is_end:
+            return data[0].to_list()
+        else:
+            return None
 
     def get_init_item(self, node: GraphNode) -> S | None:
         if (child := self.trie.root.get_child(node.value)) is None:
             return None
 
-        return TrieStrategy._build_data([node], child)
+        return (SeqNode.single(node), child)

@@ -5,7 +5,7 @@ import pickle
 from datetime import datetime
 from operator import itemgetter
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Sequence
 
 from ruzzle_solver.graph import GraphNode, build_graph
 from ruzzle_solver.loaders import Board, FileLoader, Mults, Points, RandomLoader
@@ -35,7 +35,7 @@ def read_words_from_file() -> Generator[str, None, None]:
             yield line.strip()
 
 
-def get_word_points(path: list[GraphNode], points: Points, mults: Mults) -> int:
+def get_word_points(path: Sequence[GraphNode], points: Points, mults: Mults) -> int:
     word_points = 0
     word_mult = 1
 
@@ -175,7 +175,7 @@ def main():
     logger.info("Generating words...")
 
     words: dict[str, int] = {}
-    walks: dict[str, list[GraphNode]] = {}
+    walks: dict[str, Sequence[GraphNode]] = {}
 
     strategy = TrieStrategy(trie, minlength=3)
 

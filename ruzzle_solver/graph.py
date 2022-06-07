@@ -1,12 +1,13 @@
 import itertools as it
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(eq=True, frozen=True)
 class GraphNode:
     i: int
     j: int
-    value: str
+    value: str = field(compare=False, hash=False)
+
 
 IndexTuple = tuple[int, int]
 Graph = dict[GraphNode, set[GraphNode]]
@@ -54,4 +55,4 @@ def _is_valid_adjacent(
     cols: int,
     adj: IndexTuple,
 ) -> bool:
-    return adj[0] in range(rows) and adj[1] in range(cols) and node != adj
+    return node != adj and 0 <= adj[0] < rows and 0 <= adj[1] < cols
