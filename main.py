@@ -7,11 +7,18 @@ from operator import itemgetter
 from pathlib import Path
 from typing import Generator, Sequence
 
-from ruzzle_solver.graph import GraphNode, build_graph
-from ruzzle_solver.loaders import Board, FileLoader, Mults, Points, RandomLoader
+from ruzzle_solver.graph import Graph, GraphNode, build_graph
+from ruzzle_solver.loaders import (
+    Board,
+    FileLoader,
+    LoadedInfo,
+    Mults,
+    Points,
+    RandomLoader,
+)
 from ruzzle_solver.points import LETTER_SCORE
 from ruzzle_solver.run import generate_walks
-from ruzzle_solver.strategy import TrieStrategy
+from ruzzle_solver.strategy import Strategy, TrieStrategy
 from ruzzle_solver.trie import Trie
 
 
@@ -30,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def read_words_from_file() -> Generator[str, None, None]:
-    with Path("./data/660000_parole_italiane.txt").open() as f_in:
+    with Path("./data/660000_parole_italiane.txt").open(encoding="utf-8") as f_in:
         for line in f_in:
             yield line.strip()
 
@@ -117,6 +124,61 @@ def create_parser():
 
 def main():
     args = create_parser().parse_args()
+    use_parallelism, parallelism_degree = _get_args(args)
+
+    if args.action == "file":
+        logger.info("Loading from file %s", args.file.name)
+        info = FileLoader(args.file, LETTER_SCORE).load()
+    else:
+        logger.info("Generating schema with size (%s, %s)", args.rows, args.cols)
+        info = RandomLoader(LETTER_SCORE, args.rows, args.cols).load()
+
+    board = info.board
+
+    print_board(board)
+
+    trie = _load_trie(args.force, use_parallelism, parallelism_degree)
+    graph = build_graph(board)
+
+    logger.info("Generating words...")
+
+    strategy = TrieStrategy(trie, minlength=3)
+
+    found, words, walks = _find_words(info, graph, strategy)
+
+    if not found:
+        logger.info("No words found")
+
+    if words:
+        sorted_words = sorted(words.items(), key=itemgetter(1), reverse=True)
+        for (word, word_points) in sorted_words[:10]:
+            logger.info("%s - Value: %d", word, word_points)
+
+        logger.info("-" * 30)
+        logger.info("Found %d words.", len(words))
+        logger.info("Best word: %s with value: %d", *(sorted_words[0]))
+        logger.info("%s", walks[sorted_words[0][0]])
+
+
+def _find_words(
+    info: LoadedInfo, graph: Graph, strategy: Strategy
+) -> tuple[bool, dict[str, int], dict[str, Sequence[GraphNode]]]:
+    words: dict[str, int] = {}
+    walks: dict[str, Sequence[GraphNode]] = {}
+    points, mults = info.points, info.mults
+    found = False
+    for walk in generate_walks(graph, strategy):
+        word = "".join(n.value for n in walk)
+        found = True
+
+        word_points = get_word_points(walk, points, mults)
+        if words.get(word, -1) < word_points:
+            words[word] = word_points
+            walks[word] = walk
+    return found, words, walks
+
+
+def _get_args(args):
     num = args.num
     if num is None:
         use_parallelism = False
@@ -134,23 +196,14 @@ def main():
         parallelism_degree,
     )
 
-    if args.action == "file":
-        logger.info("Loading from file %s", args.file.name)
-        info = FileLoader(args.file, LETTER_SCORE).load()
-    else:
-        logger.info("Generating schema with size (%s, %s)", args.rows, args.cols)
-        info = RandomLoader(LETTER_SCORE, args.rows, args.cols).load()
+    return use_parallelism, parallelism_degree
 
-    board = info.board
-    points = info.points
-    mults = info.mults
 
-    print_board(board)
-
+def _load_trie(force, use_parallelism, parallelism_degree):
     cache = Path("./tree.pickle")
     cache_loaded = False
 
-    if cache.exists() and not args.force:
+    if cache.exists() and not force:
         try:
             logger.info("Loading trie from cache")
             trie = pickle.load(cache.open("rb"))
@@ -169,39 +222,7 @@ def main():
         )
         with cache.open("wb") as f_out:
             pickle.dump(trie, f_out)
-
-    graph = build_graph(board)
-
-    logger.info("Generating words...")
-
-    words: dict[str, int] = {}
-    walks: dict[str, Sequence[GraphNode]] = {}
-
-    strategy = TrieStrategy(trie, minlength=3)
-
-    found = False
-    for walk in generate_walks(graph, strategy):
-        word = "".join(n.value for n in walk)
-        found = True
-
-        word_points = get_word_points(walk, points, mults)
-        if words.get(word, -1) < word_points:
-            words[word] = word_points
-            walks[word] = walk
-
-    if not found:
-        logger.info("No words found")
-
-    if words:
-        sorted_words = sorted(words.items(), key=itemgetter(1), reverse=True)
-        for (word, word_points) in sorted_words[:10]:
-            walk = walks[word]
-            logger.info("%s - Value: %d", word, word_points)
-
-        logger.info("-" * 30)
-        logger.info("Found %d words.", len(words))
-        logger.info("Best word: %s with value: %d", *(sorted_words[0]))
-        logger.info("%s", walks[sorted_words[0][0]])
+    return trie
 
 
 if __name__ == "__main__":

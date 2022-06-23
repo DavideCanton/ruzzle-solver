@@ -31,8 +31,6 @@ class Strategy(Generic[T], metaclass=ABCMeta):
         raise NotImplementedError
 
 
-
-
 @dataclass
 class SeqNode:
     last: GraphNode
@@ -95,8 +93,8 @@ class TrieStrategy(Strategy[S]):
     def extract(self, data: S) -> Sequence[GraphNode] | None:
         if self.minlength <= len(data[0]) <= self.maxlength and data[1].is_end:
             return data[0].to_list()
-        else:
-            return None
+
+        return None
 
     def get_init_item(self, node: GraphNode) -> S | None:
         if (child := self.trie.root.get_child(node.value)) is None:

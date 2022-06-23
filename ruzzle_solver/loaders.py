@@ -3,7 +3,6 @@ import random
 import string
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TextIO
 
 Board = list[list[str]]

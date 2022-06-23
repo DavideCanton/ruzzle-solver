@@ -38,6 +38,6 @@ def _generate_walks_from_node(
 
         current = strategy.get_current(data)
         for adj in matrix.get(current, []):
-            if (next := strategy.get_next_element(adj, current, data)) is None:
+            if (next_el := strategy.get_next_element(adj, current, data)) is None:
                 continue
-            queue.appendleft(next)
+            queue.appendleft(next_el)
