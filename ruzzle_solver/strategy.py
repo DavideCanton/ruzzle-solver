@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import sys
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Generic, Sequence, TypeVar
 
 from .graph import GraphNode
@@ -35,16 +37,16 @@ class Strategy(Generic[T], metaclass=ABCMeta):
 class SeqNode:
     last: GraphNode
     length: int
-    prev: "SeqNode | None"
+    prev: SeqNode | None
     items: frozenset[GraphNode]
 
-    @staticmethod
-    def single(node: GraphNode):
-        return SeqNode(node, 1, None, frozenset([node]))
+    @classmethod
+    def single(cls, node: GraphNode) -> SeqNode:
+        return cls(node, 1, None, frozenset([node]))
 
-    @staticmethod
-    def add(node: GraphNode, seq: "SeqNode"):
-        return SeqNode(node, seq.length + 1, seq, seq.items | frozenset([node]))
+    @classmethod
+    def add(cls, node: GraphNode, seq: SeqNode) -> SeqNode:
+        return cls(node, seq.length + 1, seq, seq.items | frozenset([node]))
 
     def __len__(self):
         return self.length
@@ -67,8 +69,8 @@ S = tuple[SeqNode, Node]
 @dataclass
 class TrieStrategy(Strategy[S]):
     trie: Trie
-    minlength: int = field(default=1)
-    maxlength: int = field(default=sys.maxsize)
+    minlength: int = 1
+    maxlength: int = sys.maxsize
 
     def get_current(self, data: S) -> GraphNode:
         return data[0].last
