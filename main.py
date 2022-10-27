@@ -206,7 +206,8 @@ def _load_trie(force, use_parallelism, parallelism_degree):
     if cache.exists() and not force:
         try:
             logger.info("Loading trie from cache")
-            trie = pickle.load(cache.open("rb"))
+            with cache.open("rb") as c:
+                trie = pickle.load(c)
             cache_loaded = True
         except Exception as e:
             logger.warning("Error loading cache: %s", e)
