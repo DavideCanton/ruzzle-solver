@@ -10,11 +10,6 @@ repos:
     hooks:
       - id: black
         args: ["--check"]
-  - repo: https://github.com/PyCQA/prospector
-    rev: 1.7.7
-    hooks:
-      - id: prospector
-        exclude: tests/.+
   - repo: https://github.com/PyCQA/isort
     rev: 5.10.1
     hooks:

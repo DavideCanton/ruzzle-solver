@@ -3,11 +3,11 @@ import random
 import string
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import TextIO
+from typing import TextIO, cast
 
 Board = list[list[str]]
 Points = dict[str, int]
-Mults = dict[tuple[int, int], str]
+Mults = dict[tuple[int, int], tuple[str, str]]
 
 
 @dataclass
@@ -36,7 +36,10 @@ class FileLoader(Loader):
 
         board = json_obj["board"]
         points = self.letter_scores[json_obj["lang"]]
-        mults = {build_key(k): v for (k, v) in json_obj["mults"].items()}
+        mults = {
+            build_key(k): cast(tuple[str, str], tuple(v))
+            for (k, v) in json_obj["mults"].items()
+        }
 
         return LoadedInfo(board, points, mults)
 

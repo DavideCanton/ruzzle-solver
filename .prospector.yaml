@@ -1,4 +1,0 @@
-strictness: medium
-
-ignore-paths:
-  - tests

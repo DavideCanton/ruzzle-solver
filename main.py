@@ -2,6 +2,7 @@ import argparse
 import logging
 import multiprocessing as mp
 import pickle
+import pickletools
 from datetime import datetime
 from operator import itemgetter
 from pathlib import Path
@@ -48,12 +49,17 @@ def get_word_points(path: Sequence[GraphNode], points: Points, mults: Mults) -> 
 
     for node in path:
         node_points = points[node.value.upper()]
-        mult_val, mult_type = list(mults.get((node.i, node.j), "  "))
+        mult_val, mult_type = mults.get((node.i, node.j), (" ", " "))
 
-        if mult_type == "L":
-            node_points *= 2 if mult_val == "D" else 3
-        elif mult_type == "W":
-            word_mult *= 2 if mult_val == "D" else 3
+        match (mult_type, mult_val):
+            case ("L", "D"):
+                node_points *= 2
+            case ("L", "T"):
+                node_points *= 3
+            case ("W", "D"):
+                word_mult *= 2
+            case ("W", "T"):
+                word_mult *= 3
 
         word_points += node_points
 
@@ -122,8 +128,7 @@ def create_parser():
     return parser
 
 
-def main():
-    args = create_parser().parse_args()
+def main(args):
     use_parallelism, parallelism_degree = _get_args(args)
 
     if args.action == "file":
@@ -227,4 +232,5 @@ def _load_trie(force, use_parallelism, parallelism_degree):
 
 
 if __name__ == "__main__":
-    main()
+    args = create_parser().parse_args()
+    main(args)
