@@ -2,7 +2,6 @@ import argparse
 import logging
 import multiprocessing as mp
 import pickle
-import pickletools
 from datetime import datetime
 from operator import itemgetter
 from pathlib import Path

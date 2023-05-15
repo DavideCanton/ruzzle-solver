@@ -52,7 +52,7 @@ class RandomLoader(Loader):
 
     def load(self) -> LoadedInfo:
         def split_list(cnt, lst):
-            return [list(el) for el in zip(*[iter(lst)] * cnt)]
+            return [list(el) for el in zip(*[iter(lst)] * cnt, strict=False)]
 
         letters = []
 
