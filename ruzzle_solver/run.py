@@ -1,25 +1,20 @@
+from __future__ import annotations
+
 from collections import deque
-from typing import Generator, Sequence, TypeVar
+from collections.abc import Iterator, Sequence
 
 from .graph import Graph, GraphNode
 from .strategy import Strategy
 
 
-def generate_walks(
-    matrix: Graph, strategy
-) -> Generator[Sequence[GraphNode], None, None]:
+def generate_walks[T](matrix: Graph, strategy: Strategy[T]) -> Iterator[Sequence[GraphNode]]:
     for node in matrix:
         yield from _generate_walks_from_node(matrix, strategy, node)
 
 
-T = TypeVar("T")
-
-
-def _generate_walks_from_node(
-    matrix: Graph,
-    strategy: Strategy[T],
-    node: GraphNode,
-) -> Generator[Sequence[GraphNode], None, None]:
+def _generate_walks_from_node[T](
+    matrix: Graph, strategy: Strategy[T], node: GraphNode
+) -> Iterator[Sequence[GraphNode]]:
     initial_item = strategy.get_init_item(node)
 
     if not initial_item:

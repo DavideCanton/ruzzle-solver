@@ -1,18 +1,20 @@
+from __future__ import annotations
+
 import itertools as it
 import multiprocessing as mp
 import operator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
-from typing import Generator, Iterable
 
 
 @dataclass(eq=True)
 class Node:
     char: str
-    children: dict[str, "Node"] = field(default_factory=dict)
-    parent: "Node | None" = field(default=None)
+    children: dict[str, Node] = field(default_factory=dict)
+    parent: Node | None = field(default=None)
     is_end: bool = field(default=False)
 
-    def get_child(self, child: str) -> "Node | None":
+    def get_child(self, child: str) -> Node | None:
         return self.children.get(child)
 
 
@@ -27,13 +29,11 @@ class Trie:
         words: Iterable[str],
         use_parallelism: bool = True,
         parallelism_degree: int | None = None,
-    ) -> "Trie":
+    ) -> Trie:
         words = sorted(words)
 
         if use_parallelism:
-            words_dict = [
-                list(g) for _, g in it.groupby(words, key=operator.itemgetter(0))
-            ]
+            words_dict = [list(g) for _, g in it.groupby(words, key=operator.itemgetter(0))]
             if parallelism_degree is None:
                 parallelism_degree = mp.cpu_count()
             else:
@@ -47,13 +47,13 @@ class Trie:
         trie = Trie()
         for t in tries:
             r = t.root
-            for (c, rr) in r.children.items():
+            for c, rr in r.children.items():
                 trie.root.children[c] = rr
 
         return trie
 
     @staticmethod
-    def _make_trie(words: Iterable[str]) -> "Trie":
+    def _make_trie(words: Iterable[str]) -> Trie:
         trie = Trie()
 
         cur_node = trie.root
@@ -71,9 +71,7 @@ class Trie:
         return word, cur_node
 
     @staticmethod
-    def _backtrack_word(
-        word: str, current_word: str, current: Node
-    ) -> tuple[str, Node]:
+    def _backtrack_word(word: str, current_word: str, current: Node) -> tuple[str, Node]:
         c: Node | None = current
 
         while word[: len(current_word)] != current_word:
@@ -110,7 +108,7 @@ class Trie:
 
         return current.is_end
 
-    def words(self) -> Generator[str, None, None]:
+    def words(self) -> Iterator[str]:
         cur_word: list[str] = []
         stack = [(self.root, -1)]
 

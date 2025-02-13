@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import itertools as it
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 
@@ -9,17 +12,18 @@ class GraphNode:
     value: str = field(compare=False, hash=False)
 
 
-IndexTuple = tuple[int, int]
-Graph = dict[GraphNode, set[GraphNode]]
+type IndexTuple = tuple[int, int]
+type Graph = dict[GraphNode, set[GraphNode]]
 
 
-def build_graph(matrix: list[list[str]]) -> Graph:
+def build_graph(matrix: Sequence[Sequence[str]]) -> Graph:
     rows = len(matrix)
     cols = len(matrix[0])
 
     nodes = {
-        (i, j): GraphNode(i, j, matrix[i][j])
-        for i, j in it.product(range(rows), range(cols))
+        (i, j): GraphNode(i, j, value)
+        for i, row in enumerate(matrix)
+        for j, value in enumerate(row)
     }
 
     adjacents = {
@@ -41,18 +45,9 @@ def _get_adjacents(
 
     for offset_i, offset_j in it.product([-1, 0, 1], repeat=2):
         adj = i + offset_i, j + offset_j
+        node = (i, j)
 
-        if _is_valid_adjacent((i, j), rows, cols, adj):
-            node = nodes[adj]
-            adjacents_of_node.add(node)
+        if node != adj and 0 <= adj[0] < rows and 0 <= adj[1] < cols:
+            adjacents_of_node.add(nodes[adj])
 
     return adjacents_of_node
-
-
-def _is_valid_adjacent(
-    node: IndexTuple,
-    rows: int,
-    cols: int,
-    adj: IndexTuple,
-) -> bool:
-    return node != adj and 0 <= adj[0] < rows and 0 <= adj[1] < cols

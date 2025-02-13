@@ -2,10 +2,10 @@ import argparse
 import logging
 import multiprocessing as mp
 import pickle
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from datetime import datetime
 from operator import itemgetter
 from pathlib import Path
-from typing import Generator, Sequence
 
 from ruzzle_solver.graph import Graph, GraphNode, build_graph
 from ruzzle_solver.loaders import (
@@ -22,21 +22,21 @@ from ruzzle_solver.strategy import Strategy, TrieStrategy
 from ruzzle_solver.trie import Trie
 
 
-def configure_logger(use_file=False):
+def configure_logger(use_file: bool = False) -> None:
     format_msg = "%(message)s"
     now = datetime.now().strftime("%Y%m%d%H%M%S")
-    args = dict(format=format_msg, level=logging.INFO)
+    args = {"format": format_msg, "level": logging.INFO}
 
     if use_file:
         args["filename"] = f"{now}_ruzzle.log"
 
-    logging.basicConfig(**args)
+    logging.basicConfig(**args)  # type: ignore
 
 
 logger = logging.getLogger(__name__)
 
 
-def read_words_from_file() -> Generator[str, None, None]:
+def read_words_from_file() -> Iterator[str]:
     with Path("./data/660000_parole_italiane.txt").open(encoding="utf-8") as f_in:
         for line in f_in:
             yield line.strip()
@@ -48,9 +48,8 @@ def get_word_points(path: Sequence[GraphNode], points: Points, mults: Mults) -> 
 
     for node in path:
         node_points = points[node.value.upper()]
-        mult_val, mult_type = mults.get((node.i, node.j), (" ", " "))
 
-        match (mult_type, mult_val):
+        match mults.get((node.i, node.j)):
             case ("L", "D"):
                 node_points *= 2
             case ("L", "T"):
@@ -65,25 +64,21 @@ def get_word_points(path: Sequence[GraphNode], points: Points, mults: Mults) -> 
     return word_points * word_mult
 
 
-def print_header(size: int):
-    buf = []
-    for _ in range(size):
-        buf.append("+---")
+def print_header(size: int) -> None:
+    buf = ["+---"] * size
     buf.append("+")
     header = "".join(buf)
     logger.info(header)
 
 
-def print_row(row: list[str]):
-    buf = []
-    for char in row:
-        buf.append(f"| {char} ")
+def print_row(row: Iterable[str]) -> None:
+    buf = [f"| {char} " for char in row]
     buf.append("|")
     header = "".join(buf)
     logger.info(header)
 
 
-def print_board(board: Board):
+def print_board(board: Board) -> None:
     for row in board:
         print_header(len(row))
         print_row(row)
@@ -111,9 +106,7 @@ def create_parser():
         default=False,
     )
 
-    parser_file = subparsers.add_parser(
-        "file", help="Reads the schema from a json file."
-    )
+    parser_file = subparsers.add_parser("file", help="Reads the schema from a json file.")
     parser_file.add_argument(
         "file", type=argparse.FileType("r", encoding="UTF-8"), help="The json file"
     )
@@ -127,7 +120,7 @@ def create_parser():
     return parser
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     use_parallelism, parallelism_degree = _get_args(args)
 
     if args.action == "file":
@@ -155,7 +148,7 @@ def main(args):
 
     if words:
         sorted_words = sorted(words.items(), key=itemgetter(1), reverse=True)
-        for (word, word_points) in sorted_words[:10]:
+        for word, word_points in sorted_words[:10]:
             logger.info("%s - Value: %d", word, word_points)
 
         logger.info("-" * 30)
@@ -164,9 +157,9 @@ def main(args):
         logger.info("%s", walks[sorted_words[0][0]])
 
 
-def _find_words(
-    info: LoadedInfo, graph: Graph, strategy: Strategy
-) -> tuple[bool, dict[str, int], dict[str, Sequence[GraphNode]]]:
+def _find_words[T](
+    info: LoadedInfo, graph: Graph, strategy: Strategy[T]
+) -> tuple[bool, Mapping[str, int], Mapping[str, Sequence[GraphNode]]]:
     words: dict[str, int] = {}
     walks: dict[str, Sequence[GraphNode]] = {}
     points, mults = info.points, info.mults
@@ -182,17 +175,17 @@ def _find_words(
     return found, words, walks
 
 
-def _get_args(args):
-    num = args.num
-    if num is None:
-        use_parallelism = False
-        parallelism_degree = None
-    elif num == "auto":
-        use_parallelism = True
-        parallelism_degree = None
-    else:
-        use_parallelism = True
-        parallelism_degree = int(num)
+def _get_args(args: argparse.Namespace) -> tuple[bool, int | None]:
+    match args.num:
+        case None:
+            use_parallelism = False
+            parallelism_degree = None
+        case "auto":
+            use_parallelism = True
+            parallelism_degree = None
+        case num:
+            use_parallelism = True
+            parallelism_degree = int(num)
 
     logger.info(
         "Concurrency arguments use_parallelism=%s, parallelism_degree=%s",
@@ -203,7 +196,7 @@ def _get_args(args):
     return use_parallelism, parallelism_degree
 
 
-def _load_trie(force, use_parallelism, parallelism_degree):
+def _load_trie(force: bool, use_parallelism: bool, parallelism_degree: int | None) -> Trie:
     cache = Path("./tree.pickle")
     cache_loaded = False
 

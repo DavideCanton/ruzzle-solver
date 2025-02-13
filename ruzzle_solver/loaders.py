@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 import json
 import random
 import string
-from abc import ABCMeta, abstractmethod
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TextIO, cast
+from typing import Protocol, TextIO, cast
 
-Board = list[list[str]]
-Points = dict[str, int]
-Mults = dict[tuple[int, int], tuple[str, str]]
+type Board = Sequence[Sequence[str]]
+type Points = Mapping[str, int]
+type Mults = Mapping[tuple[int, int], tuple[str, str]]
 
 
 @dataclass
@@ -17,8 +19,7 @@ class LoadedInfo:
     mults: Mults
 
 
-class Loader(metaclass=ABCMeta):
-    @abstractmethod
+class Loader(Protocol):
     def load(self) -> LoadedInfo:
         pass
 
@@ -26,7 +27,7 @@ class Loader(metaclass=ABCMeta):
 @dataclass
 class FileLoader(Loader):
     file: TextIO
-    letter_scores: dict[str, Points]
+    letter_scores: Mapping[str, Points]
 
     def load(self) -> LoadedInfo:
         def build_key(k):
@@ -37,8 +38,7 @@ class FileLoader(Loader):
         board = json_obj["board"]
         points = self.letter_scores[json_obj["lang"]]
         mults = {
-            build_key(k): cast(tuple[str, str], tuple(v))
-            for (k, v) in json_obj["mults"].items()
+            build_key(k): cast(tuple[str, str], tuple(v)) for (k, v) in json_obj["mults"].items()
         }
 
         return LoadedInfo(board, points, mults)
@@ -46,7 +46,7 @@ class FileLoader(Loader):
 
 @dataclass
 class RandomLoader(Loader):
-    letter_scores: dict[str, Points]
+    letter_scores: Mapping[str, Points]
     rows: int
     cols: int
 
@@ -56,10 +56,12 @@ class RandomLoader(Loader):
 
         letters = []
 
-        for _ in range(int(self.rows * self.cols * 0.5)):
-            letters.append(random.choice("aeiou"))
+        vowels = "aeiou"
 
-        cons = list(set(string.ascii_lowercase) - set("aeiou"))
+        for _ in range(int(self.rows * self.cols * 0.5)):
+            letters.append(random.choice(vowels))
+
+        cons = list(set(string.ascii_lowercase) - set(vowels))
         remaining = self.rows * self.cols - len(letters)
 
         for _ in range(remaining):

@@ -143,3 +143,4 @@ $RECYCLE.BIN/
 .mypy_cache/
 
 *.pickle
+.dmypy.json
